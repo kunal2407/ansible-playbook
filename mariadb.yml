@@ -1,0 +1,62 @@
+- name: install and configure mariadb
+  hosts: db_servers
+  become: true
+  tasks:
+    - name: install mariadb
+      package:
+        name: mariadb105-server
+        state: present
+
+    - name: Start MariaDB
+      service:
+        name: mariadb
+        state: started
+        enabled: yes
+
+    - name: install pip module
+      pip:
+        name:
+          - pexpect
+        state: present
+
+    - name: Is root password set?
+      command: mysql -u root --execute "SELECT NOW()"
+      register: is_root_password_set
+      ignore_errors: yes
+
+    - name: secure mariadb
+      expect:
+        command: mysql_secure_installation
+        responses:
+          'Enter current password for root': ''
+          'Set root password': 'y'
+          'New password': '12345'
+          'Re-enter new password': '12345'
+          'Remove anonymous users': 'y'
+          'Disallow root login remotely': 'n'
+          'Remove test database': 'y'
+          'Reload privilege tables now': 'y'
+      register: secure_mariadb
+      failed_when: "'... Failed!' in secure_mariadb.stdout"
+      become: true
+
+    - name: create user and grant access to database
+      command: >
+        mysql -u root -p12345 -e "CREATE USER 'deepak'@'localhost' IDENTIFIED BY '12345';
+        GRANT ALL PRIVILEGES ON *.* TO 'deepak'@'localhost';
+        FLUSH PRIVILEGES;"
+      ignore_errors: yes
+
+    - name: create  database
+      command: >
+        mysql -u deepak -p12345 -e create database studentapp;
+        use studentapp;
+        CREATE TABLE if not exists students(student_id INT NOT NULL AUTO_INCREMENT,
+        student_name VARCHAR(100) NOT NULL,
+        student_addr VARCHAR(100) NOT NULL,
+        student_age VARCHAR(3) NOT NULL,
+        student_qual VARCHAR(20) NOT NULL,
+        student_percent VARCHAR(10) NOT NULL,
+        student_year_passed VARCHAR(10) NOT NULL,
+        PRIMARY KEY (student_id));
+      ignore_errors: yes
