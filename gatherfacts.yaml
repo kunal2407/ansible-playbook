@@ -1,0 +1,73 @@
+- name: print msg 
+  hosts: all
+  tasks:
+    - name: Gather Facts #gather facts
+      debug:
+        msg: "Hello World"
+    - name: print os 
+      debug:
+        msg: "{{ansible_os_family}}"   #print facts
+    
+    
+    - name: print error 
+      debug:
+        msg: "{{abc.123}}"
+      ignore_errors: true          #ignore errors
+    
+    
+    - name: print os 
+      debug:
+        msg: "{{ansible_processor_cores}}"
+    
+    
+    # - name: Task 1 (conditional)
+    #   command:  yum install java -y
+    #   when: ansible_os_family == "Debian" or ansible_os_family == "Redhat"
+    
+    
+    - name: Task 1 (conditional)
+      command:  yum install java -y
+      when: ansible_os_family == "RedHat"  ##condition
+      become: true                         ## privilage escalation
+    
+    
+    
+    - name: Print fruit names
+      debug:
+        msg: "{{ item }}" 
+      loop:                  ##loops
+        - Apple
+        - Banana
+        - Orange
+
+    - name: install package
+      yum:
+        name: "{{ item }}" 
+        state: present
+      loop:                  ##loops
+        - httpd
+        - nginx
+        - java
+      become: true
+
+
+    - name: set facts
+      set_fact:
+        my_os: "ubuntu"
+        my_name: "deepak"                 ##set facts
+    - name: print OS
+      debug:
+        msg: "{{ my_os }}"
+    - name: print my name 
+      debug:
+        msg: "{{my_name}}"
+
+
+    - name: set facts
+      set_fact:
+        my_package: "tomcat9"
+    - name: install package
+      package:
+        name: "{{my_package}}"
+        state: present
+      become: true
